@@ -2,10 +2,9 @@
 
 namespace Raml\Types;
 
-use Raml\Type;
-use Raml\TypeInterface;
-use Raml\TypeCollection;
 use Raml\ApiDefinition;
+use Raml\Type;
+use Raml\TypeCollection;
 
 /**
  * LazyProxyType class for lazy loading datatype objects
@@ -13,15 +12,18 @@ use Raml\ApiDefinition;
 class LazyProxyType extends Type
 {
     /**
-     * @var TypeInterface
+     * @var Type
      */
     private $wrappedObject;
 
     /**
-     * @var TypeInterface[]
+     * @var Type[]
      */
     private $properties;
 
+    /**
+     * @param string $name
+     */
     public function __construct($name)
     {
         parent::__construct($name);
@@ -30,20 +32,33 @@ class LazyProxyType extends Type
     }
 
     /**
+     * Magic method to proxy all method calls to original object
+     * @param string $name Name of called method.
+     * @param array $params Parameters of called method.
+     * @return mixed Returns whatever the actual method returns.
+     */
+    public function __call($name, $params)
+    {
+        $original = $this->getResolvedObject();
+
+        return \call_user_func_array([$original, $name], $params);
+    }
+
+    /**
      * Create a new LazyProxyType from an array of data
      *
      * @param string $name Type name.
      * @param array $data Type data.
-     *
      * @return LazyProxyType
-     * @throws \Exception
+     *
+     * @throws \InvalidArgumentException
      */
     public static function createFromArray($name, array $data = [])
     {
         $proxy = new static($name);
         $proxy->setDefinition($data);
         if (!isset($data['type'])) {
-            throw new \Exception('Missing "type" key in $data param to determine datatype!');
+            throw new \InvalidArgumentException('Missing "type" key in $data param to determine datatype!');
         }
         if (isset($data['properties'])) {
             $proxy->properties = $data['properties'];
@@ -57,6 +72,10 @@ class LazyProxyType extends Type
         return $proxy;
     }
 
+    /**
+     * @param string $value
+     * @return bool
+     */
     public function discriminate($value)
     {
         if (!$this->getWrappedObject()->discriminate($value)) {
@@ -89,32 +108,18 @@ class LazyProxyType extends Type
     }
 
     /**
-     * @return TypeInterface[]
+     * @return Type[]
      */
     public function getProperties()
     {
         foreach ($this->properties as $name => $property) {
-            if (!$property instanceof TypeInterface) {
+            if (!$property instanceof Type) {
                 $property = ApiDefinition::determineType($name, $property);
             }
             $this->properties[$name] = $property;
         }
 
         return $this->properties;
-    }
-
-    /**
-     * Magic method to proxy all method calls to original object
-     * @param string $name       Name of called method.
-     * @param array $params     Parameters of called method.
-     *
-     * @return mixed Returns whatever the actual method returns.
-     */
-    public function __call($name, $params)
-    {
-        $original = $this->getResolvedObject();
-
-        return call_user_func_array([$original, $name], $params);
     }
 
     /**
@@ -142,7 +147,7 @@ class LazyProxyType extends Type
         if ($this->discriminate($value)) {
             $original->validate($value);
             if (!$original->isValid()) {
-                $this->errors = array_merge($this->errors, $original->getErrors());
+                $this->errors = \array_merge($this->errors, $original->getErrors());
             }
         }
     }
@@ -164,20 +169,23 @@ class LazyProxyType extends Type
     }
 
     /**
-     * @return ObjectType
+     * @return self|Type
      */
     public function getResolvedObject()
     {
         $object = $this->getWrappedObject();
-        if ($object instanceof self) {
-            $definition = $object->getDefinitionRecursive();
-
-            return ApiDefinition::determineType($this->getName(), $definition);
+        if (!$object instanceof self) {
+            return $object;
         }
 
-        return $object;
+        $definition = $object->getDefinitionRecursive();
+
+        return ApiDefinition::determineType($this->getName(), $definition);
     }
 
+    /**
+     * @return Type
+     */
     public function getWrappedObject()
     {
         if ($this->wrappedObject === null) {
@@ -188,11 +196,14 @@ class LazyProxyType extends Type
         return $this->wrappedObject;
     }
 
+    /**
+     * @return array
+     */
     public function getDefinitionRecursive()
     {
         $type = $this->getWrappedObject();
         $typeDefinition = ($type instanceof self) ? $type->getDefinitionRecursive() : $type->getDefinition();
-        $recursiveDefinition = array_replace_recursive($typeDefinition, $this->getDefinition());
+        $recursiveDefinition = \array_replace_recursive($typeDefinition, $this->getDefinition());
         $recursiveDefinition['type'] = $typeDefinition['type'];
 
         return $recursiveDefinition;

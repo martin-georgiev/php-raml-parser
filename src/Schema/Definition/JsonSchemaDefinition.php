@@ -3,8 +3,8 @@
 namespace Raml\Schema\Definition;
 
 use JsonSchema\Constraints\Constraint;
-use Raml\Schema\SchemaDefinitionInterface;
 use JsonSchema\Validator;
+use Raml\Schema\SchemaDefinitionInterface;
 use Raml\Types\TypeValidationError;
 
 final class JsonSchemaDefinition implements SchemaDefinitionInterface
@@ -21,7 +21,6 @@ final class JsonSchemaDefinition implements SchemaDefinitionInterface
     /**
      * Create a JSON Schema definition
      *
-     * @param \stdClass $json
      */
     public function __construct(\stdClass $json)
     {
@@ -29,12 +28,19 @@ final class JsonSchemaDefinition implements SchemaDefinitionInterface
     }
 
     /**
+     * Returns the JSON schema as a string
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return \json_encode($this->json);
+    }
+
+    /**
      * Validate a JSON string against the schema
      * - Converts the string into a JSON object then uses the JsonSchema Validator to validate
      *
-     * @param mixed $value
-     *
-     * @throws \Exception
      */
     public function validate($value)
     {
@@ -48,16 +54,6 @@ final class JsonSchemaDefinition implements SchemaDefinitionInterface
                 $this->errors[] = new TypeValidationError($error['property'], $error['constraint']);
             }
         }
-    }
-
-    /**
-     * Returns the JSON schema as a string
-     *
-     * @return string
-     */
-    public function __toString()
-    {
-        return json_encode($this->json);
     }
 
     /**
@@ -79,7 +75,7 @@ final class JsonSchemaDefinition implements SchemaDefinitionInterface
     {
         $jsonSchema = $this->json;
 
-        return json_decode(json_encode($jsonSchema), true);
+        return \json_decode(\json_encode($jsonSchema), true);
     }
 
     /**

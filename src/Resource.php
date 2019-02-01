@@ -59,12 +59,10 @@ class Resource implements ArrayInstantiationInterface
      */
     private $securitySchemes = [];
 
-    // --
-
     /**
      * List of resources under this resource
      *
-     * @var Resource[]
+     * @var self[]
      */
     private $subResources = [];
 
@@ -81,24 +79,19 @@ class Resource implements ArrayInstantiationInterface
     private $traits = [];
 
     /**
-     * @var Resource|null
+     * @var resource|null
      */
     private $parentResource;
 
-    // ---
-
     /**
-     * Create a new Resource from an array
+     * @param string $uri
      *
-     * @param string        $uri
-     * @param ApiDefinition $apiDefinition
-     *
-     * @throws \Exception
+     * @throws \InvalidArgumentException
      */
     public function __construct($uri, ApiDefinition $apiDefinition)
     {
-        if (strpos($uri, '/') !== 0) {
-            throw new \Exception('URI must begin with a /');
+        if (\mb_strpos($uri, '/') !== 0) {
+            throw new \InvalidArgumentException('URI must begin with a /');
         }
 
         $this->uri = $uri;
@@ -111,16 +104,15 @@ class Resource implements ArrayInstantiationInterface
     /**
      * Create a Resource from an array
      *
-     * @param string        $uri
+     * @param string $uri
      * @param ApiDefinition $apiDefinition
-     * @param array         $data
+     * @param array $data
      * [
-     *  uri:               string
-     *  displayName:       ?string
-     *  description:       ?string
+     *  uri: string
+     *  displayName: ?string
+     *  description: ?string
      *  baseUriParameters: ?array
      * ]
-     *
      * @return self
      */
     public static function createFromArray($uri, array $data = [], ApiDefinition $apiDefinition = null)
@@ -156,8 +148,8 @@ class Resource implements ArrayInstantiationInterface
         if (isset($data['securedBy'])) {
             foreach ($data['securedBy'] as $key => $securedBy) {
                 if ($securedBy) {
-                    if (is_array($securedBy)) {
-                        $key = array_keys($securedBy)[0];
+                    if (\is_array($securedBy)) {
+                        $key = \array_keys($securedBy)[0];
                         $securityScheme = clone $apiDefinition->getSecurityScheme($key);
                         $securityScheme->mergeSettings($securedBy[$key]);
                         $resource->addSecurityScheme($securityScheme);
@@ -177,11 +169,11 @@ class Resource implements ArrayInstantiationInterface
         }
 
         foreach ($data as $key => $value) {
-            if (strpos($key, '/') === 0) {
+            if (\strpos($key, '/') === 0) {
                 $value = $value ?: [];
                 if (isset($data['uriParameters'])) {
                     $currentParameters = isset($value['uriParameters']) ? $value['uriParameters'] : [];
-                    $value['uriParameters'] = array_merge($currentParameters, $data['uriParameters']);
+                    $value['uriParameters'] = \array_merge($currentParameters, $data['uriParameters']);
                 }
                 $resource->addResource(
                     self::createFromArray(
@@ -190,7 +182,7 @@ class Resource implements ArrayInstantiationInterface
                         $apiDefinition
                     )
                 );
-            } elseif (in_array(strtoupper($key), Method::$validMethods, true)) {
+            } elseif (\in_array(\strtoupper($key), Method::$validMethods, true)) {
                 $resource->addMethod(
                     Method::createFromArray(
                         $key,
@@ -224,33 +216,32 @@ class Resource implements ArrayInstantiationInterface
         foreach ($this->getUriParameters() as $uriParameter) {
             $matchPattern = $uriParameter->getMatchPattern();
             if ('^' === $matchPattern[0]) {
-                $matchPattern = substr($matchPattern, 1);
+                $matchPattern = \substr($matchPattern, 1);
             }
 
-            if ('$' === substr($matchPattern, -1)) {
-                $matchPattern = substr($matchPattern, 0, -1);
+            if ('$' === \substr($matchPattern, -1)) {
+                $matchPattern = \substr($matchPattern, 0, -1);
             }
 
-            $regexUri = str_replace(
+            $regexUri = \str_replace(
                 '/{' . $uriParameter->getKey() . '}',
                 '/' . $matchPattern,
                 $regexUri
             );
 
-            $regexUri = str_replace(
+            $regexUri = \str_replace(
                 '/~{' . $uriParameter->getKey() . '}',
                 '/((' . $matchPattern . ')|())',
                 $regexUri
             );
         }
 
-
-        $regexUri = preg_replace('/\/{.*}/U', '\/([^/]+)', $regexUri);
-        $regexUri = preg_replace('/\/~{.*}/U', '\/([^/]*)', $regexUri);
+        $regexUri = \preg_replace('/\/{.*}/U', '\/([^/]+)', $regexUri);
+        $regexUri = \preg_replace('/\/~{.*}/U', '\/([^/]*)', $regexUri);
         // начало и конец регулярки - символ, который гарантированно не встретится
-        $regexUri = chr(128) . '^' . $regexUri . '$' . chr(128);
+        $regexUri = \chr(128) . '^' . $regexUri . '$' . \chr(128);
 
-        return (bool) preg_match($regexUri, $uri);
+        return (bool) \preg_match($regexUri, $uri);
     }
 
     // ---
@@ -324,7 +315,6 @@ class Resource implements ArrayInstantiationInterface
     /**
      * Add a new base uri parameter
      *
-     * @param NamedParameter $namedParameter
      */
     public function addBaseUriParameter(NamedParameter $namedParameter)
     {
@@ -346,7 +336,6 @@ class Resource implements ArrayInstantiationInterface
     /**
      * Add a new uri parameter
      *
-     * @param NamedParameter $namedParameter
      */
     public function addUriParameter(NamedParameter $namedParameter)
     {
@@ -368,7 +357,6 @@ class Resource implements ArrayInstantiationInterface
     /**
      * Add a resource
      *
-     * @param self $resource
      */
     public function addResource(self $resource)
     {
@@ -381,7 +369,6 @@ class Resource implements ArrayInstantiationInterface
     /**
      * Add a method
      *
-     * @param Method $method
      */
     public function addMethod(Method $method)
     {
@@ -414,7 +401,7 @@ class Resource implements ArrayInstantiationInterface
      */
     public function getMethod($method)
     {
-        $method = strtoupper($method);
+        $method = \strtoupper($method);
 
         if (!isset($this->methods[$method])) {
             throw new \Exception('Method not found');
@@ -433,9 +420,6 @@ class Resource implements ArrayInstantiationInterface
         return $this->securitySchemes;
     }
 
-    /**
-     * @param SecurityScheme $securityScheme
-     */
     public function addSecurityScheme(SecurityScheme $securityScheme)
     {
         $this->securitySchemes[$securityScheme->getKey()] = $securityScheme;
@@ -461,7 +445,7 @@ class Resource implements ArrayInstantiationInterface
     }
 
     /**
-     * @return Resource|null
+     * @return resource|null
      */
     public function getParentResource()
     {
@@ -469,7 +453,7 @@ class Resource implements ArrayInstantiationInterface
     }
 
     /**
-     * @param Resource $parentResource
+     * @param resource $parentResource
      *
      * @return $this
      */

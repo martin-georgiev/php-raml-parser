@@ -2,9 +2,8 @@
 
 namespace Raml;
 
-use Raml\Schema\SchemaDefinitionInterface;
-
 use Raml\Exception\BadParameter\InvalidSchemaDefinitionException;
+use Raml\Schema\SchemaDefinitionInterface;
 use Raml\Types\ObjectType;
 
 /**
@@ -68,12 +67,12 @@ class Body implements BodyInterface, ArrayInstantiationInterface
      *
      * @param string $mediaType
      *
-     * @throws InvalidSchemaDefinitionException
+     * @throws \InvalidArgumentException
      */
     public function __construct($mediaType)
     {
-        if (in_array($mediaType, WebFormBody::$validMediaTypes, true)) {
-            throw new \Exception('Invalid media type');
+        if (\in_array($mediaType, WebFormBody::$validMediaTypes, true)) {
+            throw new \InvalidArgumentException('Invalid media type');
         }
 
         $this->mediaType = $mediaType;
@@ -90,10 +89,7 @@ class Body implements BodyInterface, ArrayInstantiationInterface
      *  example:    ?string
      *  examples:   ?array
      * ]
-     *
-     * @throws \Exception
-     *
-     * @return Body
+     * @return self
      */
     public static function createFromArray($mediaType, array $data = [])
     {
@@ -193,7 +189,7 @@ class Body implements BodyInterface, ArrayInstantiationInterface
      */
     public function setSchema($schema)
     {
-        if (!is_string($schema) && !$schema instanceof SchemaDefinitionInterface) {
+        if (!\is_string($schema) && !$schema instanceof SchemaDefinitionInterface) {
             throw new InvalidSchemaDefinitionException();
         }
 
@@ -215,7 +211,6 @@ class Body implements BodyInterface, ArrayInstantiationInterface
     /**
      * Set the type
      *
-     * @param \Raml\TypeInterface $type
      *
      * @throws \Exception Throws exception when type does not parse
      */

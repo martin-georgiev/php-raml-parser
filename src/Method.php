@@ -12,12 +12,9 @@ use Raml\Exception\EmptyBodyException;
 class Method implements ArrayInstantiationInterface, MessageSchemaInterface
 {
     /**
-     * Valid METHODS
-     * @var array
+     * @var string[]
      */
     public static $validMethods = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'];
-
-    // ---
 
     /**
      * The method type (required)
@@ -28,8 +25,6 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
      * @var string
      */
     private $type;
-
-    // --
 
     /**
      * The description of the method (optional)
@@ -107,12 +102,11 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
     /**
      * Create a new Method from an array
      *
-     * @param string        $type
-     * @param ApiDefinition $apiDefinition
+     * @param string $type
      */
     public function __construct($type, ApiDefinition $apiDefinition)
     {
-        $this->type = strtoupper($type);
+        $this->type = \strtoupper($type);
 
         foreach ($apiDefinition->getProtocols() as $protocol) {
             $this->addProtocol($protocol);
@@ -133,9 +127,6 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
      *  queryParameters:    ?array
      * ]
      * @param ApiDefinition $apiDefinition
-     *
-     * @throws \Exception
-     *
      * @return Method
      */
     public static function createFromArray($method, array $data = [], ApiDefinition $apiDefinition = null)
@@ -144,12 +135,8 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
 
         if (isset($data['body'])) {
             foreach ($data['body'] as $key => $bodyData) {
-                if (is_array($bodyData)) {
-                    if (in_array($key, WebFormBody::$validMediaTypes, true)) {
-                        $body = WebFormBody::createFromArray($key, $bodyData);
-                    } else {
-                        $body = Body::createFromArray($key, $bodyData);
-                    }
+                if (\is_array($bodyData)) {
+                    $body = \in_array($key, WebFormBody::$validMediaTypes, true) ? WebFormBody::createFromArray($key, $bodyData) : Body::createFromArray($key, $bodyData);
 
                     $method->addBody($body);
                 }
@@ -180,7 +167,7 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
             }
         }
 
-        if (isset($data['responses']) && is_array($data['responses'])) {
+        if (isset($data['responses']) && \is_array($data['responses'])) {
             foreach ($data['responses'] as $responseCode => $response) {
                 $method->addResponse(
                     Response::createFromArray($responseCode, $response ?: [])
@@ -199,8 +186,8 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
         if (isset($data['securedBy'])) {
             foreach ($data['securedBy'] as $key => $securedBy) {
                 if ($securedBy) {
-                    if (is_array($securedBy)) {
-                        $key = array_keys($securedBy)[0];
+                    if (\is_array($securedBy)) {
+                        $key = \array_keys($securedBy)[0];
                         $securityScheme = clone $apiDefinition->getSecurityScheme($key);
                         $securityScheme->mergeSettings($securedBy[$key]);
                         $method->addSecurityScheme($securityScheme);
@@ -269,7 +256,6 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
     /**
      * Add a new base uri parameter
      *
-     * @param NamedParameter $namedParameter
      */
     public function addBaseUriParameter(NamedParameter $namedParameter)
     {
@@ -291,7 +277,6 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
     /**
      * Add a new header
      *
-     * @param NamedParameter $header
      */
     public function addHeader(NamedParameter $header)
     {
@@ -307,7 +292,7 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
      */
     public function supportsHttp()
     {
-        return in_array(ApiDefinition::PROTOCOL_HTTP, $this->protocols, true);
+        return \in_array(ApiDefinition::PROTOCOL_HTTP, $this->protocols, true);
     }
 
     /**
@@ -317,7 +302,7 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
      */
     public function supportsHttps()
     {
-        return in_array(ApiDefinition::PROTOCOL_HTTPS, $this->protocols, true);
+        return \in_array(ApiDefinition::PROTOCOL_HTTPS, $this->protocols, true);
     }
 
     /**
@@ -334,7 +319,7 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
      * Get example by type (application/json, text/plain, ...)
      *
      * @param string $type
-     * @return array
+     * @return string[]
      */
     public function getExampleByType($type)
     {
@@ -350,11 +335,11 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
      */
     public function addProtocol($protocol)
     {
-        if (!in_array($protocol, [ApiDefinition::PROTOCOL_HTTP, ApiDefinition::PROTOCOL_HTTPS], true)) {
-            throw new \InvalidArgumentException(sprintf('"%s" is not a valid protocol', $protocol));
+        if (!\in_array($protocol, [ApiDefinition::PROTOCOL_HTTP, ApiDefinition::PROTOCOL_HTTPS], true)) {
+            throw new \InvalidArgumentException(\sprintf('"%s" is not a valid protocol', $protocol));
         }
 
-        if (in_array($protocol, $this->protocols, true) === false) {
+        if (!\in_array($protocol, $this->protocols, true)) {
             $this->protocols[] = $protocol;
         }
     }
@@ -374,7 +359,6 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
     /**
      * Add a query parameter
      *
-     * @param NamedParameter $queryParameter
      */
     public function addQueryParameter(NamedParameter $queryParameter)
     {
@@ -387,10 +371,10 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
      * Get the body by type
      *
      * @param string $type
-     *
-     * @throws \Exception
-     *
      * @return BodyInterface
+     *
+     * @throws EmptyBodyException
+     * @throws \InvalidArgumentException
      */
     public function getBodyByType($type)
     {
@@ -402,20 +386,20 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
             return $this->bodyList[$type];
         }
 
-        if (($pos = strpos($type, ';')) !== false) {
-            $type = substr($type, 0, $pos);
+        if (($pos = \strpos($type, ';')) !== false) {
+            $type = \substr($type, 0, $pos);
             if (isset($this->bodyList[$type])) {
                 return $this->bodyList[$type];
             }
         }
 
-        throw new \Exception(sprintf('No body of type "%s"', $type));
+        throw new \InvalidArgumentException(\sprintf('No body of type "%s"', $type));
     }
 
     /**
      * Get an array of all bodies
      *
-     * @return array The array of bodies
+     * @return BodyInterface[]
      */
     public function getBodies()
     {
@@ -425,7 +409,6 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
     /**
      * Add a body
      *
-     * @param BodyInterface $body
      */
     public function addBody(BodyInterface $body)
     {
@@ -459,7 +442,6 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
     /**
      * Add a response
      *
-     * @param Response $response
      */
     public function addResponse(Response $response)
     {
@@ -479,7 +461,6 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
     }
 
     /**
-     * @param SecurityScheme $securityScheme
      * @param bool $merge Set to true to merge the security scheme data with the method, or false to not merge it.
      */
     public function addSecurityScheme(SecurityScheme $securityScheme, $merge = true)
@@ -502,14 +483,14 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
                 }
 
                 foreach ($this->getBodies() as $bodyType => $body) {
-                    if (in_array($bodyType, array_keys($describedBy->getBodies(), true)) &&
-                        in_array($bodyType, WebFormBody::$validMediaTypes, true)
+                    if (\in_array($bodyType, \array_keys($describedBy->getBodies(), true, true), true) &&
+                        \in_array($bodyType, WebFormBody::$validMediaTypes, true)
                     ) {
                         $body = $describedBy->getBodyByType($bodyType);
-                        assert($body instanceof WebFormBody);
+                        \assert($body instanceof WebFormBody);
                         $params = $body->getParameters();
 
-                        foreach ($params as $parameterName => $namedParameter) {
+                        foreach ($params as $namedParameter) {
                             $body->addParameter($namedParameter);
                         }
                     }
@@ -530,7 +511,7 @@ class Method implements ArrayInstantiationInterface, MessageSchemaInterface
 
     /**
      * @param TraitDefinition $trait
-     * @return $this
+     * @return self
      */
     public function addTrait($trait)
     {

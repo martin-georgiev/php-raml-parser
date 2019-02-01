@@ -2,6 +2,7 @@
 
 namespace Raml\Types;
 
+use Raml\ApiDefinition;
 use Raml\Type;
 use Raml\TypeCollection;
 use Raml\TypeInterface;
@@ -21,6 +22,9 @@ class ArrayType extends Type
         'string',
         'boolean',
         'number',
+        'datetime-only',
+        'date-only',
+        'time-only',
     ];
 
     /**
@@ -57,17 +61,16 @@ class ArrayType extends Type
      * Create a new ArrayType from an array of data
      *
      * @param string $name
-     * @param array $data
      *
      * @return ArrayType
      */
     public static function createFromArray($name, array $data = [])
     {
         $type = parent::createFromArray($name, $data);
-        assert($type instanceof self);
-        $pos = strpos($type->getType(), '[]');
+        \assert($type instanceof self);
+        $pos = \strpos($type->getType(), '[]');
         if ($pos !== false) {
-            $type->setItems(substr($type->getType(), 0, $pos));
+            $type->setItems(\substr($type->getType(), 0, $pos));
         }
         $type->setType('array');
 
@@ -78,7 +81,7 @@ class ArrayType extends Type
 
                     break;
                 case 'items':
-                    if (is_array($value) && isset($value['type'])) {
+                    if (\is_array($value) && isset($value['type'])) {
                         $type->setItems($value['type']);
 
                         break;
@@ -150,13 +153,13 @@ class ArrayType extends Type
     {
         parent::validate($value);
 
-        if (!is_array($value)) {
+        if (!\is_array($value)) {
             $this->errors[] = TypeValidationError::unexpectedValueType($this->getName(), 'is array', $value);
 
             return;
         }
 
-        $actualArraySize = count($value);
+        $actualArraySize = \count($value);
         if (!($actualArraySize >= $this->minItems && $actualArraySize <= $this->maxItems)) {
             $this->errors[] = TypeValidationError::arraySizeValidationFailed(
                 $this->getName(),
@@ -166,7 +169,7 @@ class ArrayType extends Type
             );
         }
 
-        if (in_array($this->items, self::$SCALAR_TYPES, true)) {
+        if (\in_array($this->items, self::$SCALAR_TYPES, true)) {
             $this->validateScalars($value);
         } else {
             $this->validateObjects($value);
@@ -175,48 +178,16 @@ class ArrayType extends Type
 
     private function validateScalars($value)
     {
+        $typeObject = ApiDefinition::determineType('item', ['type' => $this->items]);
+
         foreach ($value as $valueItem) {
-            switch ($this->items) {
-                case 'integer':
-                    if (!is_int($valueItem)) {
-                        $this->errors[] = TypeValidationError::unexpectedArrayValueType(
-                            $this->getName(),
-                            'integer',
-                            $valueItem
-                        );
-                    }
-
-                    break;
-                case 'string':
-                    if (!is_string($valueItem)) {
-                        $this->errors[] = TypeValidationError::unexpectedArrayValueType(
-                            $this->getName(),
-                            'string',
-                            $valueItem
-                        );
-                    }
-
-                    break;
-                case 'boolean':
-                    if (!is_bool($valueItem)) {
-                        $this->errors[] = TypeValidationError::unexpectedArrayValueType(
-                            $this->getName(),
-                            'boolean',
-                            $valueItem
-                        );
-                    }
-
-                    break;
-                case 'number':
-                    if (!is_float($valueItem) && !is_int($valueItem)) {
-                        $this->errors[] = TypeValidationError::unexpectedArrayValueType(
-                            $this->getName(),
-                            'number',
-                            $valueItem
-                        );
-                    }
-
-                    break;
+            $typeObject->validate($valueItem);
+            if (!$typeObject->isValid()) {
+                $this->errors[] = TypeValidationError::unexpectedArrayValueType(
+                    $this->getName(),
+                    $this->items,
+                    $valueItem
+                );
             }
         }
     }
@@ -226,7 +197,7 @@ class ArrayType extends Type
         foreach ($value as $valueItem) {
             $this->getItems()->validate($valueItem);
             if (!$this->getItems()->isValid()) {
-                $this->errors = array_merge($this->errors, $this->getItems()->getErrors());
+                $this->errors = \array_merge($this->errors, $this->getItems()->getErrors());
             }
         }
     }

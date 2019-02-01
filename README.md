@@ -1,9 +1,10 @@
-# PHP RAML Parser
+[![Build Status](https://api.travis-ci.org/raml-org/raml-php-parser.svg?branch=master)](https://www.travis-ci.org/raml-org/raml-php-parser)
+[![Coverage Status](https://coveralls.io/repos/github/raml-org/raml-php-parser/badge.svg?branch=master)](https://coveralls.io/github/raml-org/raml-php-parser?branch=master)
+[![Latest Stable Version](https://poser.pugx.org/raml-org/raml-php-parser/v/stable)](https://packagist.org/packages/raml-org/raml-php-parser)
+[![Latest Unstable Version](https://poser.pugx.org/raml-org/raml-php-parser/v/unstable)](https://packagist.org/packages/raml-org/raml-php-parser)
+[![Total Downloads](https://poser.pugx.org/raml-org/raml-php-parser/downloads)](https://packagist.org/packages/raml-org/raml-php-parser)
 
-[![Build Status](https://travis-ci.org/raml-org/raml-php-parser.svg?branch=master)](https://travis-ci.org/raml-org/raml-php-parser)
-[![Coverage Status](https://img.shields.io/coveralls/raml-org/raml-php-parser.svg)](https://coveralls.io/r/raml-org/raml-php-parser?branch=master)
-
-See the RAML spec here: https://github.com/raml-org/raml-spec
+See the [RAML specification](https://github.com/raml-org/raml-spec).
 
 ## RAML 0.8 Support
 For RAML 0.8 support follow version 2.
@@ -55,13 +56,13 @@ Additional parsers and schema definitions can be created and passed into the `Ra
 
 ### Exporting routes
 It is also possible to export the entire RAML file to an array of the full endpoints. For example, considering
-a [basic RAML](https://github.com/raml-org/raml-php-parser/blob/master/test/fixture/simple.raml), this can be
+a [basic RAML](https://github.com/raml-org/raml-php-parser/blob/master/tests/fixture/simple.raml), this can be
 returned using:
 
 
 ```php
-$parser = new Raml\Parser();
-$api = $parser->parse('test/fixture/simple.raml');
+$parser = new \Raml\Parser();
+$api = $parser->parse('tests/fixture/simple.raml');
 
 $routes = $api->getResourcesAsUri();
 ```
@@ -75,7 +76,7 @@ To return:
     DELETE /songs/{songId} => ...
 ]
 
-$routes = $api->getResourcesAsUri(new Raml\RouteFormatter\NoRouteFormatter());
+$routes = $api->getResourcesAsUri(new \Raml\RouteFormatter\NoRouteFormatter());
 ```
 
 #### Route Formatters

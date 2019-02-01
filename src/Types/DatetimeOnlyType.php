@@ -2,7 +2,6 @@
 
 namespace Raml\Types;
 
-use DateTime;
 use Raml\Type;
 
 /**
@@ -10,20 +9,22 @@ use Raml\Type;
  */
 class DatetimeOnlyType extends Type
 {
-    const FORMAT = "Y-m-d\TH:i:s";
+    /**
+     * @var string
+     */
+    const FORMAT = 'Y-m-d\\TH:i:s';
 
     /**
     * Create a new DateTimeOnlyType from an array of data
     *
-    * @param string    $name
-    * @param array     $data
+    * @param string $name
     *
     * @return self
     */
     public static function createFromArray($name, array $data = [])
     {
         $type = parent::createFromArray($name, $data);
-        assert($type instanceof self);
+        \assert($type instanceof self);
 
         return $type;
     }
@@ -32,7 +33,7 @@ class DatetimeOnlyType extends Type
     {
         parent::validate($value);
 
-        $d = DateTime::createFromFormat(self::FORMAT, $value);
+        $d = \DateTimeImmutable::createFromFormat(self::FORMAT, $value);
 
         if (!$d || $d->format(self::FORMAT) !== $value) {
             $this->errors[] = TypeValidationError::unexpectedValueType($this->getName(), 'datetime-only', $value);

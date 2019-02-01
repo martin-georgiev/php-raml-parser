@@ -2,8 +2,8 @@
 
 namespace Raml\Types;
 
-use Raml\Type;
 use JsonSchema\Validator;
+use Raml\Type;
 
 /**
  * JsonType class
@@ -15,22 +15,20 @@ class JsonType extends Type
     /**
      * Json schema
      *
-     * @var string
+     * @var array
      */
     private $json;
 
     /**
     * Create a new JsonType from an array of data
     *
-    * @param string    $name
-    * @param array     $data
-    *
+    * @param string $name
     * @return self
     */
     public static function createFromArray($name, array $data = [])
     {
         $type = parent::createFromArray($name, $data);
-        assert($type instanceof self);
+        \assert($type instanceof self);
 
         $type->json = $data;
 
@@ -41,9 +39,6 @@ class JsonType extends Type
      * Validate a JSON string against the schema
      * - Converts the string into a JSON object then uses the JsonSchema Validator to validate
      *
-     * @param mixed $value
-     *
-     * @return bool
      */
     public function validate($value)
     {

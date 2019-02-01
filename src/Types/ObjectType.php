@@ -2,8 +2,8 @@
 
 namespace Raml\Types;
 
-use Raml\Type;
 use Raml\ApiDefinition;
+use Raml\Type;
 
 /**
  * ObjectType class
@@ -15,7 +15,7 @@ class ObjectType extends Type
     /**
      * The properties that instances of this type can or must have.
      *
-     * @var \Raml\Type[]
+     * @var Type[]
      */
     private $properties;
 
@@ -63,17 +63,14 @@ class ObjectType extends Type
     private $discriminatorValue;
 
     /**
-     * Create a new ObjectType from an array of data
-     *
-     * @param string                 $name Type name.
-     * @param array                  $data Type data.
-     *
-     * @return ObjectType
+     * @param string $name Type name.
+     * @param array $data Type data.
+     * @return self
      */
     public static function createFromArray($name, array $data = [])
     {
         $type = parent::createFromArray($name, $data);
-        assert($type instanceof self);
+        \assert($type instanceof self);
         $type->setType('object');
 
         foreach ($data as $key => $value) {
@@ -108,15 +105,15 @@ class ObjectType extends Type
         return $type;
     }
 
+    /**
+     * @param string $value
+     * @return bool
+     */
     public function discriminate($value)
     {
         if (isset($value[$this->getDiscriminator()])) {
             if ($this->getDiscriminatorValue() !== null) {
-                if ($this->getDiscriminatorValue() === $value[$this->getDiscriminator()]) {
-                    return true;
-                }
-
-                return false;
+                return $this->getDiscriminatorValue() === $value[$this->getDiscriminator()];
             }
 
             return $value[$this->getDiscriminator()] === $this->getName();
@@ -138,14 +135,12 @@ class ObjectType extends Type
     /**
      * Set the value of Properties
      *
-     * @param array $properties
-     *
      * @return self
      */
     public function setProperties(array $properties)
     {
         foreach ($properties as $name => $property) {
-            if ($property instanceof \Raml\TypeInterface === false) {
+            if (!$property instanceof Type) {
                 $property = ApiDefinition::determineType($name, $property);
             }
             $this->properties[] = $property;
@@ -167,14 +162,12 @@ class ObjectType extends Type
                 return $property;
             }
         }
-
-        return null;
     }
 
     /**
      * Get the value of Min Properties
      *
-     * @return mixed
+     * @return int
      */
     public function getMinProperties()
     {
@@ -184,8 +177,7 @@ class ObjectType extends Type
     /**
      * Set the value of Min Properties
      *
-     * @param mixed $minProperties
-     *
+     * @param int $minProperties
      * @return self
      */
     public function setMinProperties($minProperties)
@@ -198,7 +190,7 @@ class ObjectType extends Type
     /**
      * Get the value of Max Properties
      *
-     * @return mixed
+     * @return int
      */
     public function getMaxProperties()
     {
@@ -208,8 +200,7 @@ class ObjectType extends Type
     /**
      * Set the value of Max Properties
      *
-     * @param mixed $maxProperties
-     *
+     * @param int $maxProperties
      * @return self
      */
     public function setMaxProperties($maxProperties)
@@ -222,7 +213,6 @@ class ObjectType extends Type
     /**
      * Get the value of Additional Properties
      *
-     * @return mixed
      */
     public function getAdditionalProperties()
     {
@@ -232,7 +222,6 @@ class ObjectType extends Type
     /**
      * Set the value of Additional Properties
      *
-     * @param mixed $additionalProperties
      *
      * @return self
      */
@@ -246,7 +235,7 @@ class ObjectType extends Type
     /**
      * Get the value of Discriminator
      *
-     * @return mixed
+     * @return string
      */
     public function getDiscriminator()
     {
@@ -256,8 +245,7 @@ class ObjectType extends Type
     /**
      * Set the value of Discriminator
      *
-     * @param mixed $discriminator
-     *
+     * @param string $discriminator
      * @return self
      */
     public function setDiscriminator($discriminator)
@@ -270,7 +258,7 @@ class ObjectType extends Type
     /**
      * Get the value of Discriminator Value
      *
-     * @return mixed
+     * @return string
      */
     public function getDiscriminatorValue()
     {
@@ -280,8 +268,7 @@ class ObjectType extends Type
     /**
      * Set the value of Discriminator Value
      *
-     * @param mixed $discriminatorValue
-     *
+     * @param string $discriminatorValue
      * @return self
      */
     public function setDiscriminatorValue($discriminatorValue)
@@ -296,24 +283,24 @@ class ObjectType extends Type
         parent::validate($value);
 
         // an object is in essence just a group (array) of datatypes
-        if (!is_array($value)) {
-            if (!is_object($value)) {
+        if (!\is_array($value)) {
+            if (!\is_object($value)) {
                 $this->errors[] = TypeValidationError::unexpectedValueType($this->getName(), 'object', $value);
 
                 return;
             }
             // in case of stdClass - convert it to array for convenience
-            $value = get_object_vars($value);
+            $value = \get_object_vars($value);
         }
         foreach ($this->getProperties() as $property) {
-            if ($property->getRequired() && !array_key_exists($property->getName(), $value)) {
+            if ($property->getRequired() && !\array_key_exists($property->getName(), $value)) {
                 $this->errors[] = TypeValidationError::missingRequiredProperty($property->getName());
             }
         }
         foreach ($value as $name => $propertyValue) {
             $property = $this->getPropertyByName($name);
-            if (!$property) {
-                if ($this->additionalProperties === false) {
+            if ($property === null) {
+                if (!$this->additionalProperties) {
                     $this->errors[] = TypeValidationError::unexpectedProperty($name);
                 }
 

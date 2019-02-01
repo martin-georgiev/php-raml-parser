@@ -2,7 +2,6 @@
 
 namespace Raml\Types;
 
-use DateTime;
 use Raml\Type;
 
 /**
@@ -10,20 +9,21 @@ use Raml\Type;
  */
 class TimeOnlyType extends Type
 {
+    /**
+     * @var string
+     */
     const FORMAT = 'H:i:s';
 
     /**
      * Create a new TimeOnlyType from an array of data
      *
-     * @param string    $name
-     * @param array     $data
-     *
+     * @param string $name
      * @return TimeOnlyType
      */
     public static function createFromArray($name, array $data = [])
     {
         $type = parent::createFromArray($name, $data);
-        assert($type instanceof self);
+        \assert($type instanceof self);
 
         return $type;
     }
@@ -32,10 +32,10 @@ class TimeOnlyType extends Type
     {
         parent::validate($value);
 
-        $d = DateTime::createFromFormat(self::FORMAT, $value);
+        $d = \DateTimeImmutable::createFromFormat(self::FORMAT, $value);
 
-        if ($d && $d->format(self::FORMAT) !== $value) {
-            $this->errors[] = TypeValidationError::unexpectedValueType($this->getName(), self::FORMAT, $value);
+        if (!$d || $d->format(self::FORMAT) !== $value) {
+            $this->errors[] = TypeValidationError::unexpectedValueType($this->getName(), 'time-only', $value);
         }
     }
 }

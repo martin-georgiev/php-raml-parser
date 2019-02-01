@@ -2,19 +2,18 @@
 
 namespace Raml;
 
-use Raml\RouteFormatter\RouteFormatterInterface;
-use Raml\RouteFormatter\NoRouteFormatter;
-use Raml\Schema\SchemaDefinitionInterface;
-use Raml\RouteFormatter\BasicRoute;
-use Raml\Exception\InvalidKeyException;
-use Raml\Exception\BadParameter\ResourceNotFoundException;
-use Raml\Exception\BadParameter\InvalidSchemaDefinitionException;
 use Raml\Exception\BadParameter\InvalidProtocolException;
+use Raml\Exception\BadParameter\InvalidSchemaDefinitionException;
+use Raml\Exception\BadParameter\ResourceNotFoundException;
 use Raml\Exception\MutuallyExclusiveElementsException;
-use Raml\Utility\StringTransformer;
-use Raml\Types\UnionType;
+use Raml\RouteFormatter\BasicRoute;
+use Raml\RouteFormatter\NoRouteFormatter;
+use Raml\RouteFormatter\RouteFormatterInterface;
+use Raml\Schema\SchemaDefinitionInterface;
 use Raml\Types\ArrayType;
 use Raml\Types\LazyProxyType;
+use Raml\Types\UnionType;
+use Raml\Utility\StringTransformer;
 
 /**
  * The API Definition
@@ -23,8 +22,15 @@ use Raml\Types\LazyProxyType;
  */
 class ApiDefinition implements ArrayInstantiationInterface
 {
-    /* public */ const PROTOCOL_HTTP = 'HTTP';
-    /* public */ const PROTOCOL_HTTPS = 'HTTPS';
+    /**
+     * @var string
+     */
+    const PROTOCOL_HTTP = 'HTTP';
+
+    /**
+     * @var string
+     */
+    const PROTOCOL_HTTPS = 'HTTPS';
 
     /**
      * The API Title (required)
@@ -121,7 +127,7 @@ class ApiDefinition implements ArrayInstantiationInterface
      *
      * @see http://raml.org/spec.html#resources-and-nested-resources
      *
-     * @var Resource[]
+     * @var resource[]
      */
     private $resources = [];
 
@@ -159,8 +165,6 @@ class ApiDefinition implements ArrayInstantiationInterface
      */
     private $traits;
 
-    // ---
-
     /**
      * Create a new API Definition
      *
@@ -182,7 +186,7 @@ class ApiDefinition implements ArrayInstantiationInterface
      * Create a new API Definition from an array
      *
      * @param string $title
-     * @param array  $data
+     * @param array $data
      * [
      *  title:              string
      *  version:            ?string
@@ -295,7 +299,7 @@ class ApiDefinition implements ArrayInstantiationInterface
 
         foreach ($data as $resourceName => $resource) {
             // check if actually a resource
-            if (strpos($resourceName, '/') === 0) {
+            if (\strpos($resourceName, '/') === 0) {
                 $apiDefinition->addResource(
                     Resource::createFromArray(
                         $apiDefinition->getUrlPrefix() . $resourceName,
@@ -313,23 +317,23 @@ class ApiDefinition implements ArrayInstantiationInterface
      * Get a resource by a uri
      *
      * @param string $uri
+     * @return resource
      *
-     * @throws InvalidKeyException
-     *
-     * @return Resource
+     * @throws ResourceNotFoundException
      */
     public function getResourceByUri($uri)
     {
         // get rid of everything after the ?
-        $uri = strtok($uri, '?');
+        $uri = \strtok($uri, '?');
 
         $resources = $this->getResourcesAsArray($this->resources);
         foreach ($resources as $resource) {
+            \assert($resource instanceof Resource);
             if ($resource->matchesUri($uri)) {
                 return $resource;
             }
         }
-        // we never returned so throw exception
+
         throw new ResourceNotFoundException($uri);
     }
 
@@ -337,15 +341,14 @@ class ApiDefinition implements ArrayInstantiationInterface
      * Get a resource by a path
      *
      * @param string $path
+     * @return resource
      *
-     * @throws InvalidKeyException
-     *
-     * @return Resource
+     * @throws ResourceNotFoundException
      */
     public function getResourceByPath($path)
     {
         // get rid of everything after the ?
-        $path = strtok($path, '?');
+        $path = \strtok($path, '?');
 
         $resources = $this->getResourcesAsArray($this->resources);
         foreach ($resources as $resource) {
@@ -365,12 +368,11 @@ class ApiDefinition implements ArrayInstantiationInterface
      * GET /songs/{songId} => [/songs/{songId}, GET, Raml\Method]
      *
      * @param RouteFormatterInterface $formatter
-     *
      * @return RouteFormatterInterface
      */
     public function getResourcesAsUri(RouteFormatterInterface $formatter = null)
     {
-        if (!$formatter) {
+        if ($formatter === null) {
             $formatter = new NoRouteFormatter();
         }
 
@@ -380,9 +382,8 @@ class ApiDefinition implements ArrayInstantiationInterface
     }
 
     /**
-     * @param Resource[] $resources
-     *
-     * @return Resource[]
+     * @param resource[] $resources
+     * @return resource[]
      */
     private function getResourcesAsArray($resources)
     {
@@ -392,7 +393,7 @@ class ApiDefinition implements ArrayInstantiationInterface
         foreach ($resources as $resource) {
             $resourceMap[$resource->getUri()] = $resource;
 
-            $resourceMap = array_merge_recursive($resourceMap, $this->getResourcesAsArray($resource->getResources()));
+            $resourceMap = \array_merge_recursive($resourceMap, $this->getResourcesAsArray($resource->getResources()));
         }
 
         return $resourceMap;
@@ -419,7 +420,7 @@ class ApiDefinition implements ArrayInstantiationInterface
      */
     public function getBaseUri()
     {
-        return ($this->version) ? str_replace('{version}', $this->version, $this->baseUri) : $this->baseUri;
+        return ($this->version) ? \str_replace('{version}', $this->version, $this->baseUri) : $this->baseUri;
     }
 
     public function setBaseUri($baseUrl)
@@ -427,7 +428,7 @@ class ApiDefinition implements ArrayInstantiationInterface
         $this->baseUri = $baseUrl;
 
         if (!$this->protocols) {
-            $protocol = strtoupper(parse_url($this->baseUri, PHP_URL_SCHEME));
+            $protocol = \strtoupper(\parse_url($this->baseUri, PHP_URL_SCHEME));
             if (!empty($protocol)) {
                 $this->protocols = [$protocol];
             }
@@ -447,7 +448,6 @@ class ApiDefinition implements ArrayInstantiationInterface
     /**
      * Add a new base uri parameter
      *
-     * @param NamedParameter $namedParameter
      */
     public function addBaseUriParameter(NamedParameter $namedParameter)
     {
@@ -467,7 +467,7 @@ class ApiDefinition implements ArrayInstantiationInterface
      */
     public function supportsHttp()
     {
-        return in_array(self::PROTOCOL_HTTP, $this->protocols, true);
+        return \in_array(self::PROTOCOL_HTTP, $this->protocols, true);
     }
 
     /**
@@ -475,7 +475,7 @@ class ApiDefinition implements ArrayInstantiationInterface
      */
     public function supportsHttps()
     {
-        return in_array(self::PROTOCOL_HTTPS, $this->protocols, true);
+        return \in_array(self::PROTOCOL_HTTPS, $this->protocols, true);
     }
 
     /**
@@ -492,11 +492,11 @@ class ApiDefinition implements ArrayInstantiationInterface
      */
     private function addProtocol($protocol)
     {
-        if (!in_array($protocol, [self::PROTOCOL_HTTP, self::PROTOCOL_HTTPS], true)) {
-            throw new InvalidProtocolException(sprintf('"%s" is not a valid protocol', $protocol));
+        if (!\in_array($protocol, [self::PROTOCOL_HTTP, self::PROTOCOL_HTTPS], true)) {
+            throw new InvalidProtocolException(\sprintf('"%s" is not a valid protocol', $protocol));
         }
 
-        if (!in_array($protocol, $this->protocols, true)) {
+        if (!\in_array($protocol, $this->protocols, true)) {
             $this->protocols[] = $protocol;
         }
     }
@@ -518,7 +518,7 @@ class ApiDefinition implements ArrayInstantiationInterface
      */
     public function setDefaultMediaType($defaultMediaType)
     {
-        if (!in_array($defaultMediaType, $this->defaultMediaTypes, true)) {
+        if (!\in_array($defaultMediaType, $this->defaultMediaTypes, true)) {
             return;
         }
         $this->defaultMediaTypes[] = $defaultMediaType;
@@ -552,22 +552,20 @@ class ApiDefinition implements ArrayInstantiationInterface
     /**
      * Add a new schema to a collection
      *
-     * @param string                            $collectionName
-     * @param string                            $schemaName
-     * @param string|SchemaDefinitionInterface  $schema
+     * @param string $collectionName
+     * @param string $schemaName
+     * @param string|SchemaDefinitionInterface $schema
      *
      * @throws InvalidSchemaDefinitionException
      */
     private function addSchema($collectionName, $schemaName, $schema)
     {
-        if (!is_string($schema) && !$schema instanceof SchemaDefinitionInterface) {
+        if (!\is_string($schema) && !$schema instanceof SchemaDefinitionInterface) {
             throw new InvalidSchemaDefinitionException();
         }
 
         $this->schemaCollections[$collectionName][$schemaName] = $schema;
     }
-
-    // --
 
     /**
      * Get the documentation of the API
@@ -614,41 +612,41 @@ class ApiDefinition implements ArrayInstantiationInterface
      *
      * @param string $name Name of type.
      * @param array $definition Definition of type.
+     * @return Type Returns a (best) matched type object.
      *
-     * @return TypeInterface Returns a (best) matched type object.
-     *
-     * @throws \Exception
+     * @throws \InvalidArgumentException
      */
     public static function determineType($name, $definition)
     {
         // check if we can find a more appropriate Type subclass
-        if (is_string($definition)) {
+        if (\is_string($definition)) {
             $definition = ['type' => $definition];
-        } elseif (is_array($definition)) {
-            if (!array_key_exists('type', $definition)) {
+        } elseif (\is_array($definition)) {
+            if (!\array_key_exists('type', $definition)) {
                 $definition['type'] = isset($definition['properties']) ? 'object' : 'string';
             }
         } else {
-            throw new \Exception('Invalid datatype for $definition parameter.');
+            throw new \InvalidArgumentException('Invalid datatype for $definition parameter.');
         }
 
         $type = $definition['type'] ?: 'null';
 
-        if (!in_array($type, ['', 'any'], true)) {
-            if (in_array($type, static::getStraightForwardTypes(), true)) {
-                $className = sprintf(
+        if (!\in_array($type, ['', 'any'], true)) {
+            if (\in_array($type, static::getStraightForwardTypes(), true)) {
+                $className = \sprintf(
                     'Raml\Types\%sType',
                     StringTransformer::convertString($type, StringTransformer::UPPER_CAMEL_CASE)
                 );
+                \assert(\class_exists($className));
 
-                return forward_static_call_array([$className, 'createFromArray'], [$name, $definition]);
+                return \forward_static_call_array([$className, 'createFromArray'], [$name, $definition]);
             }
             // if $type contains a '|' we can safely assume it's a combination of types (union)
-            if (strpos($type, '|') !== false) {
+            if (\strpos($type, '|') !== false) {
                 return UnionType::createFromArray($name, $definition);
             }
             // if $type contains a '[]' it means we have an array with a item restriction
-            if (strpos($type, '[]') !== false) {
+            if (\strpos($type, '[]') !== false) {
                 return ArrayType::createFromArray($name, $definition);
             }
             // no standard type found so this must be a reference to a custom defined type
@@ -661,6 +659,11 @@ class ApiDefinition implements ArrayInstantiationInterface
         return Type::createFromArray($name, $definition);
     }
 
+    /**
+     * @param string $name
+     * @param array $definition
+     * @return TraitDefinition
+     */
     public static function determineTrait($name, $definition)
     {
         return TraitDefinition::createFromArray($name, $definition);
@@ -669,7 +672,6 @@ class ApiDefinition implements ArrayInstantiationInterface
     /**
      * Add data type
      *
-     * @param TypeInterface $type
      */
     public function addType(TypeInterface $type)
     {
@@ -689,7 +691,6 @@ class ApiDefinition implements ArrayInstantiationInterface
     /**
      * Add trait
      *
-     * @param TraitDefinition $trait
      */
     public function addTrait(TraitDefinition $trait)
     {
@@ -706,12 +707,10 @@ class ApiDefinition implements ArrayInstantiationInterface
         return $this->traits;
     }
 
-    // --
-
     /**
      * Get the resources tree
      *
-     * @return Resource[]
+     * @return resource[]
      */
     public function getResources()
     {
@@ -721,7 +720,6 @@ class ApiDefinition implements ArrayInstantiationInterface
     /**
      * Add an additional resource
      *
-     * @param Resource $resource
      */
     public function addResource(Resource $resource)
     {
@@ -731,7 +729,6 @@ class ApiDefinition implements ArrayInstantiationInterface
     /**
      * Removes Resource from ApiDefinition
      *
-     * @param Resource $resource
      */
     public function removeResource(Resource $resource)
     {
@@ -740,8 +737,6 @@ class ApiDefinition implements ArrayInstantiationInterface
         }
         unset($this->resources[$resource->getUri()]);
     }
-
-    // --
 
     /**
      * Get a security scheme by it's name
@@ -758,7 +753,6 @@ class ApiDefinition implements ArrayInstantiationInterface
     /**
      * Add an additional security scheme
      *
-     * @param SecurityScheme $securityScheme
      */
     public function addSecurityScheme(SecurityScheme $securityScheme)
     {
@@ -778,14 +772,11 @@ class ApiDefinition implements ArrayInstantiationInterface
     /**
      * Add an additional security scheme to the list of schemes the whole API is secured by
      *
-     * @param SecurityScheme $securityScheme
      */
     public function addSecuredBy(SecurityScheme $securityScheme)
     {
         $this->securedBy[$securityScheme->getKey()] = $securityScheme;
     }
-
-    // ---
 
     /**
      * Recursive function that generates a flat array of the entire API Definition
@@ -793,9 +784,8 @@ class ApiDefinition implements ArrayInstantiationInterface
      * GET /songs => [api.example.org, /songs, GET, [https], Raml\Method]
      * GET /songs/{songId} => [api.example.org, /songs/{songId}, GET, [https], Raml\Method]
      *
-     * @param Resource[] $resources
-     *
-     * @return array[BasicRoute]
+     * @param resource[] $resources
+     * @return BasicRoute[]
      */
     private function getMethodsAsArray(array $resources)
     {
@@ -818,7 +808,7 @@ class ApiDefinition implements ArrayInstantiationInterface
                 );
             }
 
-            $all = array_merge_recursive($all, $this->getMethodsAsArray($resource->getResources()));
+            $all = \array_merge_recursive($all, $this->getMethodsAsArray($resource->getResources()));
         }
 
         return $all;
@@ -826,12 +816,8 @@ class ApiDefinition implements ArrayInstantiationInterface
 
     private function setProtocolsFromBaseUri()
     {
-        $schema = strtoupper(parse_url($this->baseUri, PHP_URL_SCHEME));
+        $schema = \strtoupper(\parse_url($this->baseUri, PHP_URL_SCHEME));
 
-        if (empty($schema)) {
-            $this->protocols = [self::PROTOCOL_HTTPS, self::PROTOCOL_HTTP];
-        } else {
-            $this->protocols = [$schema];
-        }
+        $this->protocols = empty($schema) ? [self::PROTOCOL_HTTPS, self::PROTOCOL_HTTP] : [$schema];
     }
 }

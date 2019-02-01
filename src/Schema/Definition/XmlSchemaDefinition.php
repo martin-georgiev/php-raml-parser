@@ -29,13 +29,22 @@ class XmlSchemaDefinition implements SchemaDefinitionInterface
         $this->xml = $xml;
     }
 
+    /**
+     * Returns the XML schema as a string
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->xml;
+    }
+
     // ---
     // SchemaDefinitionInterface
 
     /**
      * Validate an XML string against the schema
      *
-     * @param mixed $value
      *
      * @throws \Exception
      */
@@ -47,10 +56,10 @@ class XmlSchemaDefinition implements SchemaDefinitionInterface
             return;
         }
 
-        $originalErrorLevel = libxml_use_internal_errors(true);
+        $originalErrorLevel = \libxml_use_internal_errors(true);
         $value->schemaValidateSource($this->xml);
-        $errors = libxml_get_errors();
-        libxml_clear_errors();
+        $errors = \libxml_get_errors();
+        \libxml_clear_errors();
         if ($errors) {
             foreach ($errors as $error) {
                 $this->errors[] = TypeValidationError::xmlValidationFailed($error->message);
@@ -59,17 +68,7 @@ class XmlSchemaDefinition implements SchemaDefinitionInterface
             return;
         }
 
-        libxml_use_internal_errors($originalErrorLevel);
-    }
-
-    /**
-     * Returns the XML schema as a string
-     *
-     * @return string
-     */
-    public function __toString()
-    {
-        return $this->xml;
+        \libxml_use_internal_errors($originalErrorLevel);
     }
 
     /**

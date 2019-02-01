@@ -15,22 +15,20 @@ class XmlType extends Type
     /**
      * XML schema
      *
-     * @var string
+     * @var array
      */
     private $xml;
 
     /**
     * Create a new JsonType from an array of data
     *
-    * @param string    $name
-    * @param array     $data
-    *
+    * @param string $name
     * @return self
     */
     public static function createFromArray($name, array $data = [])
     {
         $type = parent::createFromArray($name, $data);
-        assert($type instanceof self);
+        \assert($type instanceof self);
         $type->xml = $data;
 
         return $type;
@@ -39,7 +37,6 @@ class XmlType extends Type
     /**
      * Validate an XML string against the schema
      *
-     * @param mixed $value
      */
     public function validate($value)
     {
@@ -49,10 +46,10 @@ class XmlType extends Type
             return;
         }
 
-        $originalErrorLevel = libxml_use_internal_errors(true);
+        $originalErrorLevel = \libxml_use_internal_errors(true);
         $value->schemaValidateSource($this->xml);
-        $errors = libxml_get_errors();
-        libxml_clear_errors();
+        $errors = \libxml_get_errors();
+        \libxml_clear_errors();
         if ($errors) {
             foreach ($errors as $error) {
                 $this->errors[] = TypeValidationError::xmlValidationFailed($error->message);
@@ -61,6 +58,6 @@ class XmlType extends Type
             return;
         }
 
-        libxml_use_internal_errors($originalErrorLevel);
+        \libxml_use_internal_errors($originalErrorLevel);
     }
 }

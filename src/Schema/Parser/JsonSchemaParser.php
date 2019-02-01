@@ -4,37 +4,34 @@ namespace Raml\Schema\Parser;
 
 use JsonSchema\SchemaStorage;
 use Raml\Exception\InvalidJsonException;
-use Raml\Schema\SchemaParserAbstract;
 use Raml\Schema\Definition\JsonSchemaDefinition;
+use Raml\Schema\SchemaParserAbstract;
 
 class JsonSchemaParser extends SchemaParserAbstract
 {
     /**
      * List of known JSON content types
      *
-     * @var array
+     * @var string[]
      */
     protected $compatibleContentTypes = [
         'application/json',
-        'text/json'
+        'text/json',
     ];
-
-    // ---
 
     /**
      * Create a new JSON Schema definition from a string
      *
      * @param string $schemaString
+     * @return JsonSchemaDefinition
      *
      * @throws InvalidJsonException
-     *
-     * @return \Raml\Schema\Definition\JsonSchemaDefinition
      */
     public function createSchemaDefinition($schemaString)
     {
         $schemaStorage = new SchemaStorage();
 
-        $schemaStorage->addSchema($this->getSourceUri(), json_decode($schemaString));
+        $schemaStorage->addSchema($this->getSourceUri(), \json_decode($schemaString));
         $data = $schemaStorage->getSchema($this->getSourceUri());
         $data = $this->resolveRefSchemaRecursively($data, $schemaStorage);
 
@@ -42,25 +39,22 @@ class JsonSchemaParser extends SchemaParserAbstract
     }
 
     /**
-     * @param \stdClass $data
-     * @param SchemaStorage $schemaStorage
-     * @return mixed
+     * @param \stdClass|string $data
      */
-    private function resolveRefSchemaRecursively($data, $schemaStorage)
+    private function resolveRefSchemaRecursively($data, SchemaStorage $schemaStorage)
     {
         $data = $schemaStorage->resolveRefSchema($data);
-
-        if (!is_object($data) && !is_array($data)) {
+        if (!\is_object($data) || (\is_object($data) && !$data instanceof \stdClass)) {
             return $data;
         }
 
         foreach ($data as $key => $value) {
-            if (is_object($value)) {
+            if (\is_object($value)) {
                 $data->{$key} = $this->resolveRefSchemaRecursively($value, $schemaStorage);
             }
 
-            if (is_array($value)) {
-                $data->{$key} = array_map(function ($val) use ($schemaStorage) {
+            if (\is_array($value)) {
+                $data->{$key} = \array_map(function ($val) use ($schemaStorage) {
                     return $this->resolveRefSchemaRecursively($val, $schemaStorage);
                 }, $value);
             }
